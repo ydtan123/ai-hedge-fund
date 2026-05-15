@@ -104,29 +104,57 @@ def technical_analyst_agent(state: AgentState, agent_id: str = "technical_analys
         )
 
         # Generate detailed analysis report for this ticker
+        trend_m = normalize_pandas(trend_signals["metrics"])
+        mr_m = normalize_pandas(mean_reversion_signals["metrics"])
+        mom_m = normalize_pandas(momentum_signals["metrics"])
+        vol_m = normalize_pandas(volatility_signals["metrics"])
+
+        adx_val = trend_m.get("adx")
+        rsi_val = mr_m.get("rsi_14")
+        z_val = mr_m.get("z_score")
+        mom_val = mom_m.get("momentum_1m")
+        hv_val = vol_m.get("historical_volatility")
+
+        adx_str = f"ADX {adx_val:.1f}" if adx_val is not None else "ADX N/A"
+        rsi_str = f"RSI {rsi_val:.1f}" if rsi_val is not None else "RSI N/A"
+        z_str = f"z={z_val:.2f}" if z_val is not None else ""
+        mom_str = f"1m mom {mom_val:+.1%}" if mom_val is not None else "1m mom N/A"
+        hv_str = f"HV {hv_val:.2f}" if hv_val is not None else "HV N/A"
+
+        mr_detail = f"{rsi_str}, {z_str}" if z_str else rsi_str
+        overall_conf = round(combined_signal["confidence"] * 100)
+        summary = (
+            f"Trend {trend_signals['signal']} ({adx_str}); "
+            f"MeanRev {mean_reversion_signals['signal']} ({mr_detail}); "
+            f"Momentum {momentum_signals['signal']} ({mom_str}); "
+            f"Vol {volatility_signals['signal']} ({hv_str}). "
+            f"→ {combined_signal['signal'].upper()} at {overall_conf}% confidence."
+        )
+
         technical_analysis[ticker] = {
             "signal": combined_signal["signal"],
-            "confidence": round(combined_signal["confidence"] * 100),
+            "confidence": overall_conf,
             "reasoning": {
+                "summary": summary,
                 "trend_following": {
                     "signal": trend_signals["signal"],
                     "confidence": round(trend_signals["confidence"] * 100),
-                    "metrics": normalize_pandas(trend_signals["metrics"]),
+                    "metrics": trend_m,
                 },
                 "mean_reversion": {
                     "signal": mean_reversion_signals["signal"],
                     "confidence": round(mean_reversion_signals["confidence"] * 100),
-                    "metrics": normalize_pandas(mean_reversion_signals["metrics"]),
+                    "metrics": mr_m,
                 },
                 "momentum": {
                     "signal": momentum_signals["signal"],
                     "confidence": round(momentum_signals["confidence"] * 100),
-                    "metrics": normalize_pandas(momentum_signals["metrics"]),
+                    "metrics": mom_m,
                 },
                 "volatility": {
                     "signal": volatility_signals["signal"],
                     "confidence": round(volatility_signals["confidence"] * 100),
-                    "metrics": normalize_pandas(volatility_signals["metrics"]),
+                    "metrics": vol_m,
                 },
                 "statistical_arbitrage": {
                     "signal": stat_arb_signals["signal"],

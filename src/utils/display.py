@@ -61,8 +61,8 @@ def print_trading_output(result: dict) -> None:
                 if isinstance(reasoning, str):
                     reasoning_str = reasoning
                 elif isinstance(reasoning, dict):
-                    # Convert dict to string representation
-                    reasoning_str = json.dumps(reasoning, indent=2)
+                    # Prefer human-readable summary when available
+                    reasoning_str = reasoning.get("summary") or json.dumps(reasoning, indent=2)
                 else:
                     # Convert any other type to string
                     reasoning_str = str(reasoning)

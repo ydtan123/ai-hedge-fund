@@ -9,6 +9,7 @@ from src.agents.portfolio_manager import portfolio_management_agent
 from src.agents.risk_manager import risk_management_agent
 from src.graph.state import AgentState
 from src.utils.display import print_trading_output
+from src.utils.llm import get_call_report
 from src.utils.analysts import ANALYST_ORDER, get_analyst_nodes
 from src.utils.progress import progress
 from src.utils.visualize import save_graph_as_png
@@ -130,6 +131,30 @@ def create_workflow(selected_analysts=None):
     return workflow
 
 
+def _print_llm_call_report() -> None:
+    report = get_call_report()
+    total = report["total"]
+    by_agent = report["by_agent"]
+
+    print(f"\n{Fore.WHITE}{Style.BRIGHT}LLM CALL REPORT{Style.RESET_ALL}")
+    print("=" * 50)
+    print(f"Total LLM calls: {Fore.CYAN}{total}{Style.RESET_ALL}\n")
+
+    if by_agent:
+        # Sort by call count descending
+        sorted_agents = sorted(by_agent.items(), key=lambda x: x[1], reverse=True)
+        max_name_len = max(len(name) for name, _ in sorted_agents)
+        for agent_name, count in sorted_agents:
+            bar = "█" * count
+            pct = count / total * 100 if total else 0
+            print(
+                f"  {Fore.CYAN}{agent_name:<{max_name_len}}{Style.RESET_ALL}"
+                f"  {Fore.WHITE}{count:>3}{Style.RESET_ALL} calls"
+                f"  ({pct:.0f}%)  {Fore.YELLOW}{bar}{Style.RESET_ALL}"
+            )
+    print()
+
+
 if __name__ == "__main__":
     inputs = parse_cli_inputs(
         description="Run the hedge fund trading system",
@@ -177,3 +202,4 @@ if __name__ == "__main__":
         model_provider=inputs.model_provider,
     )
     print_trading_output(result)
+    _print_llm_call_report()

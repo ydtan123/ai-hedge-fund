@@ -1,10 +1,37 @@
 """Helper functions for LLM"""
 
 import json
+import threading
+from collections import defaultdict
 from pydantic import BaseModel
 from src.llm.models import get_model, get_model_info
 from src.utils.progress import progress
 from src.graph.state import AgentState
+
+# ── LLM call tracker ─────────────────────────────────────────────────────────
+_tracker_lock = threading.Lock()
+_call_counts: dict[str, int] = defaultdict(int)  # agent_name → call count
+_total_calls: int = 0
+
+
+def reset_call_tracker() -> None:
+    global _total_calls
+    with _tracker_lock:
+        _call_counts.clear()
+        _total_calls = 0
+
+
+def get_call_report() -> dict:
+    with _tracker_lock:
+        return {"total": _total_calls, "by_agent": dict(_call_counts)}
+
+
+def _record_call(agent_name: str | None) -> None:
+    global _total_calls
+    with _tracker_lock:
+        key = agent_name or "unknown"
+        _call_counts[key] += 1
+        _total_calls += 1
 
 
 def call_llm(
@@ -59,6 +86,7 @@ def call_llm(
     for attempt in range(max_retries):
         try:
             # Call the LLM
+            _record_call(agent_name)
             result = llm.invoke(prompt)
 
             # For non-JSON support models, we need to extract and parse the JSON manually
@@ -153,7 +181,6 @@ def extract_json_from_response(content: str) -> dict | None:
                             return json.loads(content[brace_start:i + 1])
                         except json.JSONDecodeError:
                             break
-
     except Exception as e:
         print(f"Error extracting JSON from response: {e}")
     return None

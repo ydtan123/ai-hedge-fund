@@ -1,7 +1,7 @@
 
 
 from langchain_core.messages import HumanMessage
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 from src.data.models import CompanyNews
 import pandas as pd
 import numpy as np
@@ -19,7 +19,14 @@ class Sentiment(BaseModel):
     """Represents the sentiment of a news article."""
 
     sentiment: Literal["positive", "negative", "neutral"]
-    confidence: int = Field(description="Confidence 0-100")
+    confidence: int = Field(default=0, description="Confidence 0-100")
+
+    @model_validator(mode="before")
+    @classmethod
+    def _accept_confidence_score_alias(cls, data):
+        if isinstance(data, dict) and "confidence" not in data and "confidence_score" in data:
+            data = dict(data, confidence=data["confidence_score"])
+        return data
 
 
 def news_sentiment_agent(state: AgentState, agent_id: str = "news_sentiment_agent"):

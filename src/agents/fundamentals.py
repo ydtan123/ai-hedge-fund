@@ -134,6 +134,18 @@ def fundamentals_analyst_agent(state: AgentState, agent_id: str = "fundamentals_
         total_signals = len(signals)
         confidence = round(max(bullish_signals, bearish_signals) / total_signals, 2) * 100
 
+        prof = reasoning["profitability_signal"]
+        grow = reasoning["growth_signal"]
+        health = reasoning["financial_health_signal"]
+        price = reasoning["price_ratios_signal"]
+        reasoning["summary"] = (
+            f"{bullish_signals}B/{bearish_signals}Be/{total_signals - bullish_signals - bearish_signals}N signals → {overall_signal.upper()}. "
+            f"Profitability {prof['signal']} ({prof['details']}); "
+            f"Growth {grow['signal']} ({grow['details']}); "
+            f"Health {health['signal']} ({health['details']}); "
+            f"Valuation {price['signal']} ({price['details']})."
+        )
+
         fundamental_analysis[ticker] = {
             "signal": overall_signal,
             "confidence": confidence,
