@@ -12,11 +12,13 @@ Or pass --config to override the config file path:
 """
 
 import argparse
+import json
 import os
+import pathlib
 import sys
 from datetime import datetime
+
 from dateutil.relativedelta import relativedelta
-import json
 
 import yaml
 from colorama import Fore, Style, init
@@ -252,8 +254,7 @@ if __name__ == "__main__":
     )
     print_trading_output(result)
     if args.output_json:
-        import pathlib as _pl
-        _pl.Path(args.output_json).parent.mkdir(parents=True, exist_ok=True)
+        pathlib.Path(args.output_json).parent.mkdir(parents=True, exist_ok=True)
         with open(args.output_json, "w") as _f:
             json.dump(result, _f, indent=2, default=str)
         print(f"[output] Result written to {args.output_json}")
